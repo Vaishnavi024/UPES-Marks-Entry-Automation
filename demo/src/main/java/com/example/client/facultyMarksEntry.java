@@ -1,3 +1,5 @@
+package com.example.client;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -6,15 +8,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
-public class MarksEntrySystemGUI222 extends JFrame {
+public class facultyMarksEntry extends JFrame {
     private JTextField filePathField;
     private JTextField numQuestionsField;
     private JTextField numCOsField;
     private JTextArea outputArea;
 
-    public MarksEntrySystemGUI222() {
+    public facultyMarksEntry() {
         setTitle("Marks Entry System");
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,7 +54,7 @@ public class MarksEntrySystemGUI222 extends JFrame {
             int numCOs = Integer.parseInt(numCOsField.getText());
 
             try (FileInputStream fileInputStream = new FileInputStream(filePath);
-                 Workbook workbook = new XSSFWorkbook(fileInputStream)) {
+                 Workbook workbook = new HSSFWorkbook(fileInputStream)) {
 
                 Sheet sheet = workbook.getSheet("Sheet1");
 
@@ -144,6 +146,6 @@ public class MarksEntrySystemGUI222 extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(MarksEntrySystemGUI222::new);
+        SwingUtilities.invokeLater(facultyMarksEntry::new);
     }
 }
