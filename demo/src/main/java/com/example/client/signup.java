@@ -73,6 +73,7 @@ public class signup extends Application {
                     // Signup successful
                     System.out.println("Signup successful!");
                     displayAlert(Alert.AlertType.INFORMATION, "Success", "Signup Successful", "Signup Successful");
+                    primaryStage.close();
                     login.main();
                 } else {
                     // Signup failed

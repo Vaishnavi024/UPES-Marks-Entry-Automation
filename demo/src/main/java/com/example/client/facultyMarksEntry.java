@@ -1,6 +1,7 @@
 package com.example.client;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,120 +12,258 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 public class facultyMarksEntry extends JFrame {
+    private JLabel filePathLabel;
     private JTextField filePathField;
     private JTextField numQuestionsField;
     private JTextField numCOsField;
     private JTextArea outputArea;
 
+    private int numQuestions;
+    private String[] coMapping;
+    private int[] maxMarks;
+    private JFrame answerSheetFrame;
+
     public facultyMarksEntry() {
         setTitle("Marks Entry System");
-        setSize(500, 400);
+        setSize(500, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridLayout(5, 2, 10, 10));
+        setLayout(new BorderLayout());
 
-        add(new JLabel("Excel File Path:"));
+        JPanel filePanel = new JPanel(new BorderLayout());
+        add(filePanel, BorderLayout.NORTH);
+
+        filePathLabel = new JLabel("Excel File:");
+        filePanel.add(filePathLabel, BorderLayout.WEST);
+
         filePathField = new JTextField();
-        add(filePathField);
+        filePathField.setEditable(false);
+        filePanel.add(filePathField, BorderLayout.CENTER);
 
-        add(new JLabel("Number of Questions:"));
-        numQuestionsField = new JTextField();
-        add(numQuestionsField);
+        JButton chooseFileButton = new JButton("Choose File");
+        filePanel.add(chooseFileButton, BorderLayout.EAST);
+        chooseFileButton.addActionListener(e -> chooseFile());
 
-        add(new JLabel("Number of COs:"));
-        numCOsField = new JTextField();
-        add(numCOsField);
+        JPanel inputPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 10, 5, 10);
+
+        add(inputPanel, BorderLayout.CENTER);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(new JLabel("Number of Questions:"), gbc);
+
+        numQuestionsField = new JTextField(5);
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        inputPanel.add(numQuestionsField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        inputPanel.add(new JLabel("Number of COs:"), gbc);
+
+        numCOsField = new JTextField(5);
+        gbc.gridx = 1;
+        inputPanel.add(numCOsField, gbc);
 
         JButton submitButton = new JButton("Submit");
-        submitButton.addActionListener(new SubmitButtonListener());
-        add(submitButton);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE; 
+        gbc.weightx = 0; 
+        inputPanel.add(submitButton, gbc);
+        submitButton.addActionListener(e -> processInput());
 
-        outputArea = new JTextArea();
+        outputArea = new JTextArea(5, 30);
         outputArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(outputArea);
-        add(scrollPane);
+        add(scrollPane, BorderLayout.SOUTH);
 
         setVisible(true);
     }
 
-    private class SubmitButtonListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            String filePath = filePathField.getText();
-            int numQuestions = Integer.parseInt(numQuestionsField.getText());
-            int numCOs = Integer.parseInt(numCOsField.getText());
-
-            try (FileInputStream fileInputStream = new FileInputStream(filePath);
-                 Workbook workbook = new HSSFWorkbook(fileInputStream)) {
-
-                Sheet sheet = workbook.getSheet("Sheet1");
-
-                // Mapping questions to Course Outcomes
-                String[] coMapping = new String[numQuestions];
-                int[] maxMarks = new int[numQuestions];
-
-                // Prompting the teacher to enter the CO and maximum marks for each question
-                for (int i = 0; i < numQuestions; i++) {
-                    String co = JOptionPane.showInputDialog("Enter the CO for question " + (i + 1) + ": ");
-                    coMapping[i] = co;
-                    maxMarks[i] = Integer.parseInt(JOptionPane.showInputDialog("Enter the maximum marks for question " + (i + 1) + ": "));
-                }
-
-                // Asking for the number of answer sheets
-                int numAnswerSheets = Integer.parseInt(JOptionPane.showInputDialog("Enter the number of answer sheets: "));
-
-                // Loop for entering marks for each answer sheet
-                for (int s = 0; s < numAnswerSheets; s++) {
-                    String sapIdLast5;
-                    int rowNum;
-                    do {
-                        sapIdLast5 = JOptionPane.showInputDialog("Enter the last 5 digits of the SAP ID for answer sheet " + (s + 1) + ": ");
-                        String modifiedSapId = "5000" + sapIdLast5;
-                        rowNum = findRowByModifiedSAPID(sheet, modifiedSapId);
-                        if (rowNum == -1) {
-                            outputArea.append("Student with SAP ID ending with " + sapIdLast5 + " not found. Please try again.\n");
-                        }
-                    } while (rowNum == -1);
-
-                    int totalMarks = 0; // To store the sum of marks for the current answer sheet
-
-                    for (int i = 0; i < numQuestions; i++) {
-                        int marks;
-                        do {
-                            marks = Integer.parseInt(JOptionPane.showInputDialog("Enter marks for Question " + (i + 1) + " in answer sheet " + (s + 1) + ": "));
-                            if (marks > maxMarks[i]) {
-                                JOptionPane.showMessageDialog(null, "Entered marks exceed maximum marks for question " + (i + 1) + ". Please enter again.");
-                            }
-                        } while (marks > maxMarks[i]);
-
-                        totalMarks += marks; // Add marks to totalMarks
-
-                        int columnIndex = determineColumnIndex(i + 1, coMapping[i]);
-                        Row row = sheet.getRow(rowNum);
-                        Cell cell = row.createCell(columnIndex);
-                        cell.setCellValue(marks);
-                    }
-
-                    // Fill the total marks in cell EY of the current answer sheet's row
-                    int totalMarksColumnIndex = 154; // Column index for column EY
-                    Row row = sheet.getRow(rowNum);
-                    Cell cell = row.createCell(totalMarksColumnIndex);
-                    cell.setCellValue(totalMarks);
-
-                    outputArea.append("Marks updated successfully for answer sheet " + (s + 1) + "!\n");
-                }
-
-                try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
-                    workbook.write(outputStream);
-                    outputArea.append("All marks updated successfully!\n");
-                } catch (IOException ex) {
-                    outputArea.append("Error saving the Excel file: " + ex.getMessage() + "\n");
-                }
-
-            } catch (IOException ex) {
-                outputArea.append("Error reading the Excel file: " + ex.getMessage() + "\n");
-            }
+    private void chooseFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Excel Files", "xlsx", "xls"));
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            filePathField.setText(fileChooser.getSelectedFile().getPath());
         }
     }
+
+    private void processInput() {
+        try {
+            int numQuestions = Integer.parseInt(numQuestionsField.getText());
+            createQuestionForm(numQuestions);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid integer for the number of questions.");
+        }
+    }
+
+    private void createQuestionForm(int numOfQuestions) {
+        JFrame questionFrame = new JFrame("Question Details");
+        questionFrame.setSize(600, 400);
+        questionFrame.setLayout(new BorderLayout(10, 10));
+
+        JPanel inputPanel = new JPanel(new GridLayout(numQuestions + 1, 3,10,5)); 
+        GridBagConstraints gbc = new GridBagConstraints();// Rows for questions + 1 header row
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Header row
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(new JLabel("Question Number"), gbc);
+        gbc.gridx = 1;
+        inputPanel.add(new JLabel("CO"), gbc);
+        gbc.gridx = 2;
+        inputPanel.add(new JLabel("Maximum Marks"), gbc);
+        System.out.println(numOfQuestions);
+        JTextField[] coFields = new JTextField[numOfQuestions];
+        JTextField[] maxMarksFields = new JTextField[numOfQuestions];
+        // Dynamically generate input fields for each question
+        for (int i = 0; i < numOfQuestions; i++) {
+            int questionNum = i + 1;
+            gbc.gridx = 0;
+            gbc.gridy = i + 1;
+            //inputPanel.add(new JLabel(String.valueOf(questionNum))); // Question number
+            inputPanel.add(new JLabel("Q" + questionNum), gbc);
+
+            gbc.gridx = 1;
+            coFields[i] = new JTextField(10);
+            //coFields[i].setPreferredSize(new Dimension(50, 20)); // CO field
+            inputPanel.add(coFields[i], gbc);
+            
+            gbc.gridx = 2;
+            maxMarksFields[i] = new JTextField(10);
+            //maxMarksFields[i].setPreferredSize(new Dimension(50, 20));
+            inputPanel.add(maxMarksFields[i], gbc);
+        }
+
+        JButton submitButton = new JButton("Submit");
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.add(submitButton);
+
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        questionFrame.add(new JScrollPane(inputPanel), BorderLayout.CENTER);
+        questionFrame.add(buttonPanel, BorderLayout.SOUTH);
+    
+        submitButton.addActionListener(e -> {
+            try {
+                coMapping = new String[numOfQuestions];
+                maxMarks = new int[numOfQuestions];
+    
+                for (int i = 0; i < numOfQuestions; i++) {
+                    coMapping[i] = coFields[i].getText();
+                    maxMarks[i] = Integer.parseInt(maxMarksFields[i].getText());
+                }
+                System.out.println(maxMarks[0]);
+
+                int numAnswerSheets = Integer.parseInt(JOptionPane.showInputDialog("Enter the number of answer sheets: "));
+                for (int s = 0; s < numAnswerSheets; s++) {
+                    createAnswerSheetForm(numOfQuestions, numAnswerSheets);
+                }
+    
+                questionFrame.dispose(); // Close the question form after submission
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(questionFrame, "Please enter valid numbers for Maximum Marks and Answer Sheets.");
+            }
+        });
+        buttonPanel = new JPanel();
+        buttonPanel.add(submitButton);
+
+        JScrollPane scrollPane = new JScrollPane(inputPanel);
+        questionFrame.add(scrollPane, BorderLayout.CENTER);
+        questionFrame.add(buttonPanel, BorderLayout.SOUTH);
+    
+        questionFrame.setVisible(true);
+    }    
+
+    private void createAnswerSheetForm(int numOfQuestions, int remainingAnswerSheets) {
+        if (remainingAnswerSheets <= 0) {
+            return; // Exit the method if there are no remaining answer sheets
+        }
+        answerSheetFrame = new JFrame("Answer Sheet");
+        answerSheetFrame.setSize(400, 300);
+        answerSheetFrame.setLayout(new GridLayout(numOfQuestions + 2, 2));
+    
+        JLabel sapIdLabel = new JLabel("SAP ID:");
+        JTextField sapIdField = new JTextField();
+        answerSheetFrame.add(sapIdLabel);
+        answerSheetFrame.add(sapIdField);
+    
+        JTextField[] marksFields = new JTextField[numOfQuestions];
+        for (int i = 0; i < numOfQuestions; i++) {
+            JLabel questionLabel = new JLabel("Question " + (i + 1) + ":");
+            marksFields[i] = new JTextField();
+            answerSheetFrame.add(questionLabel);
+            answerSheetFrame.add(marksFields[i]);
+        }
+    
+        JButton saveButton = new JButton("Save");
+        answerSheetFrame.add(saveButton);
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveStudentData(numOfQuestions, sapIdField.getText(), marksFields, remainingAnswerSheets);
+                createAnswerSheetForm(numOfQuestions, remainingAnswerSheets - 1);
+            }
+        });
+    
+        answerSheetFrame.setVisible(true);
+    }
+    
+    private void saveStudentData(int numOfQuestions, String sapId, JTextField[] marksFields, int numAnswerSheets) {
+        String filePath = filePathField.getText();
+        try (FileInputStream fileInputStream = new FileInputStream(filePath);
+             Workbook workbook = new HSSFWorkbook(fileInputStream)) {
+    
+            Sheet sheet = workbook.getSheet("Sheet1");
+            int rowNum = findRowByModifiedSAPID(sheet, "5000" + sapId); // Assuming '5000' is a prefix
+            if (rowNum == -1) {
+                JOptionPane.showMessageDialog(null, "Student with SAP ID " + sapId + " not found. Please try again.");
+                return;
+            }
+    
+            Row row = sheet.getRow(rowNum);
+            if (row == null) {
+                row = sheet.createRow(rowNum);
+            }
+    
+            int totalMarks = 0;
+            for (int i = 0; i < numOfQuestions; i++) {
+                int marks = Integer.parseInt(marksFields[i].getText());
+                if (marks > maxMarks[i]) {
+                    JOptionPane.showMessageDialog(null, "Entered marks exceed maximum marks for question " + (i + 1) + ". Please enter again.");
+                    return;
+                }
+                Cell cell = row.createCell(determineColumnIndex(i + 1, coMapping[i]));
+                cell.setCellValue(marks);
+                totalMarks += marks;
+            }
+    
+            Cell totalMarksCell = row.createCell(154); // Assuming 154 is the total marks column index
+            totalMarksCell.setCellValue(totalMarks);
+    
+            try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
+                workbook.write(outputStream);
+            }
+            JOptionPane.showMessageDialog(null, "Marks updated successfully for SAP ID " + sapId + "!");
+    
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Error processing the Excel file: " + ex.getMessage());
+        }
+    
+        // Close the current form and potentially open a new one for the next student
+        answerSheetFrame.dispose(); 
+        
+    }
+    
+
 
     private int findRowByModifiedSAPID(Sheet sheet, String modifiedSapId) {
         int modifiedSapIdInt = Integer.parseInt(modifiedSapId);
