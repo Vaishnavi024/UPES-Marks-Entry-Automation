@@ -1,51 +1,95 @@
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-public class MarksEntrySystemGUIFinal extends JFrame {
-    private JTextField filePathField;
+public class MarksEntrySystemGUI extends JFrame {
     private JTextField numQuestionsField;
     private JTextField numCOsField;
     private JTextArea outputArea;
+    private JLabel filePathLabel;
 
-    public MarksEntrySystemGUIFinal() {
+    public MarksEntrySystemGUI() {
         setTitle("Marks Entry System");
-        setSize(500, 400);
+        setSize(500, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridLayout(5, 2, 10, 10));
+        setLayout(new BorderLayout());
 
-        add(new JLabel("Excel File Path:"));
-        filePathField = new JTextField();
-        add(filePathField);
+        JPanel filePanel = new JPanel(new BorderLayout());
+        add(filePanel, BorderLayout.NORTH);
 
-        add(new JLabel("Number of Questions:"));
-        numQuestionsField = new JTextField();
-        add(numQuestionsField);
+        filePathLabel = new JLabel("Excel File:");
+        filePanel.add(filePathLabel, BorderLayout.WEST);
 
-        add(new JLabel("Number of COs:"));
-        numCOsField = new JTextField();
-        add(numCOsField);
+        JTextField filePathField = new JTextField();
+        filePathField.setEditable(false);
+        filePanel.add(filePathField, BorderLayout.CENTER);
+
+        JButton chooseFileButton = new JButton("Choose File");
+        filePanel.add(chooseFileButton, BorderLayout.EAST);
+
+        JPanel inputPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 10, 5, 10);
+
+        add(inputPanel, BorderLayout.CENTER);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(new JLabel("Number of Questions:"), gbc);
+
+        numQuestionsField = new JTextField(5);
+        gbc.gridx = 1;
+        inputPanel.add(numQuestionsField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        inputPanel.add(new JLabel("Number of COs:"), gbc);
+
+        numCOsField = new JTextField(5);
+        gbc.gridx = 1;
+        inputPanel.add(numCOsField, gbc);
 
         JButton submitButton = new JButton("Submit");
-        submitButton.addActionListener(new SubmitButtonListener());
-        add(submitButton);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        inputPanel.add(submitButton, gbc);
 
-        outputArea = new JTextArea();
+        outputArea = new JTextArea(5, 30);
         outputArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(outputArea);
-        add(scrollPane);
+        add(scrollPane, BorderLayout.SOUTH);
 
+        chooseFileButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileFilter(new FileNameExtensionFilter("Excel Files", "xlsx", "xls"));
+                int returnValue = fileChooser.showOpenDialog(null);
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    filePathField.setText(fileChooser.getSelectedFile().getPath());
+                }
+            }
+        });
+
+        submitButton.addActionListener(new SubmitButtonListener(filePathField));
         setVisible(true);
     }
 
     private class SubmitButtonListener implements ActionListener {
+        private JTextField filePathField;
+
+        public SubmitButtonListener(JTextField filePathField) {
+            this.filePathField = filePathField;
+        }
         @Override
         public void actionPerformed(ActionEvent e) {
             String filePath = filePathField.getText();
@@ -89,7 +133,7 @@ public class MarksEntrySystemGUIFinal extends JFrame {
                     for (int i = 0; i < numQuestions; i++) {
                         int marks;
                         do {
-                            marks = Integer.parseInt(JOptionPane.showInputDialog("Enter marks for Question " + (i + 1) + " in answer sheet " + (s + 1) + ": "));
+                            marks = Integer.parseInt(JOptionPane.showInputDialog("Enter marks for Question " + (i + 1) + " in answer sheet " + (s + 1) + " for SAP ID ending with " + sapIdLast5 + ": "));
                             if (marks > maxMarks[i]) {
                                 JOptionPane.showMessageDialog(null, "Entered marks exceed maximum marks for question " + (i + 1) + ". Please enter again.");
                             }
@@ -145,6 +189,7 @@ public class MarksEntrySystemGUIFinal extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(MarksEntrySystemGUIFinal::new);
+        SwingUtilities.invokeLater(MarksEntrySystemGUI::new);
     }
 }
+
