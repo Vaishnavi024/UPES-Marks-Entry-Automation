@@ -22,6 +22,7 @@ public class facultyMarksEntry extends JFrame {
     private String[] coMapping;
     private int[] maxMarks;
     private JFrame answerSheetFrame;
+    private String selectedSheetName;
 
     public facultyMarksEntry() {
         setTitle("Marks Entry System");
@@ -91,6 +92,24 @@ public class facultyMarksEntry extends JFrame {
         int returnValue = fileChooser.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             filePathField.setText(fileChooser.getSelectedFile().getPath());
+            try {
+                selectedSheetName = selectSheet(fileChooser.getSelectedFile().getPath());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                outputArea.append("Error reading Excel file: " + ex.getMessage() + "\n");
+            }
+        }
+    }
+
+    private String selectSheet(String filePath) throws IOException {
+        try (FileInputStream fileInputStream = new FileInputStream(filePath);
+             Workbook workbook = new HSSFWorkbook(fileInputStream)) {
+            int numberOfSheets = workbook.getNumberOfSheets();
+            String[] sheetNames = new String[numberOfSheets];
+            for (int i = 0; i < numberOfSheets; i++) {
+                sheetNames[i] = workbook.getSheetName(i);
+            }
+            return (String) JOptionPane.showInputDialog(null, "Choose sheet:", "Select Sheet", JOptionPane.QUESTION_MESSAGE, null, sheetNames, sheetNames[0]);
         }
     }
 
@@ -106,14 +125,14 @@ public class facultyMarksEntry extends JFrame {
     private void createQuestionForm(int numOfQuestions) {
         JFrame questionFrame = new JFrame("Question Details");
         questionFrame.setSize(600, 400);
-        questionFrame.setLayout(new BorderLayout(10, 10));
+        questionFrame.setLayout(new BorderLayout());
 
-        JPanel inputPanel = new JPanel(new GridLayout(numQuestions + 1, 3,10,5)); 
+        JPanel inputPanel = new JPanel(new GridBagLayout()); 
         GridBagConstraints gbc = new GridBagConstraints();// Rows for questions + 1 header row
-        inputPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        gbc.insets = new Insets(5, 5, 5, 5); // Add padding between components
+        gbc.anchor = GridBagConstraints.WEST;
 
         // Header row
-        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
         gbc.gridy = 0;
         inputPanel.add(new JLabel("Question Number"), gbc);
@@ -222,7 +241,7 @@ public class facultyMarksEntry extends JFrame {
         try (FileInputStream fileInputStream = new FileInputStream(filePath);
              Workbook workbook = new HSSFWorkbook(fileInputStream)) {
     
-            Sheet sheet = workbook.getSheet("Sheet1");
+            Sheet sheet = workbook.getSheet(selectedSheetName);
             int rowNum = findRowByModifiedSAPID(sheet, "5000" + sapId); // Assuming '5000' is a prefix
             if (rowNum == -1) {
                 JOptionPane.showMessageDialog(null, "Student with SAP ID " + sapId + " not found. Please try again.");
