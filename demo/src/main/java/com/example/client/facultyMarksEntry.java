@@ -206,35 +206,65 @@ public class facultyMarksEntry extends JFrame {
         if (remainingAnswerSheets <= 0) {
             return; // Exit the method if there are no remaining answer sheets
         }
-        answerSheetFrame = new JFrame("Answer Sheet");
-        answerSheetFrame.setSize(400, 300);
-        answerSheetFrame.setLayout(new GridLayout(numOfQuestions + 2, 2));
     
-        JLabel sapIdLabel = new JLabel("SAP ID:");
-        JTextField sapIdField = new JTextField();
-        answerSheetFrame.add(sapIdLabel);
-        answerSheetFrame.add(sapIdField);
+        JFrame answerSheetFrame = new JFrame("Answer Sheet");
+        answerSheetFrame.setSize(400, 400);
+        answerSheetFrame.setLayout(new BorderLayout());
     
+        JPanel inputPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // Add padding between components
+        gbc.anchor = GridBagConstraints.WEST;
+    
+        // Add SAP ID field
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(new JLabel("SAP ID:"), gbc);
+    
+        gbc.gridx = 1;
+        JTextField sapIdField = new JTextField(10);
+        sapIdField.setPreferredSize(new Dimension(60, 20)); // Adjust size of input box
+        inputPanel.add(sapIdField, gbc);
+    
+        // Initialize array to hold marks fields
         JTextField[] marksFields = new JTextField[numOfQuestions];
+    
+        // Add question labels and marks fields
         for (int i = 0; i < numOfQuestions; i++) {
+            gbc.gridx = 0;
+            gbc.gridy = i + 1;
             JLabel questionLabel = new JLabel("Question " + (i + 1) + ":");
-            marksFields[i] = new JTextField();
-            answerSheetFrame.add(questionLabel);
-            answerSheetFrame.add(marksFields[i]);
+            inputPanel.add(questionLabel, gbc);
+    
+            gbc.gridx = 1;
+            JTextField marksField = new JTextField(6);
+            marksField.setPreferredSize(new Dimension(60, 20)); // Adjust size of input box
+            inputPanel.add(marksField, gbc);
+            marksFields[i] = marksField; // Store marks field in array
         }
     
+        // Add save button
+        gbc.gridx = 0;
+        gbc.gridy = numOfQuestions + 1;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
         JButton saveButton = new JButton("Save");
-        answerSheetFrame.add(saveButton);
-        saveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveStudentData(numOfQuestions, sapIdField.getText(), marksFields, remainingAnswerSheets);
-                createAnswerSheetForm(numOfQuestions, remainingAnswerSheets - 1);
-            }
+        saveButton.setPreferredSize(new Dimension(100, 30)); // Adjust button size
+        inputPanel.add(saveButton, gbc);
+    
+        answerSheetFrame.add(inputPanel, BorderLayout.CENTER);
+    
+        saveButton.addActionListener(e -> {
+            saveStudentData(numOfQuestions, sapIdField.getText(), marksFields, remainingAnswerSheets);
+            createAnswerSheetForm(numOfQuestions, remainingAnswerSheets - 1);
+            // answerSheetFrame.dispose();
         });
     
         answerSheetFrame.setVisible(true);
     }
+    
+        
+    
     
     private void saveStudentData(int numOfQuestions, String sapId, JTextField[] marksFields, int numAnswerSheets) {
         String filePath = filePathField.getText();
@@ -278,7 +308,7 @@ public class facultyMarksEntry extends JFrame {
         }
     
         // Close the current form and potentially open a new one for the next student
-        answerSheetFrame.dispose(); 
+        //answerSheetFrame.dispose(); 
         
     }
     
