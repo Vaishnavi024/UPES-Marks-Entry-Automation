@@ -1,0 +1,7 @@
+com\example\controllers\facultyController.class
+com\example\modals\courseModal.class
+com\example\Main.class
+com\example\modals\facultyModal.class
+com\example\modals\studentModal.class
+com\example\controllers\studentController.class
+com\example\controllers\courseController.class

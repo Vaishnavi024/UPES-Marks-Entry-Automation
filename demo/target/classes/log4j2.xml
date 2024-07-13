@@ -1,0 +1,20 @@
+<build>
+    <plugins>
+        <!-- Other plugins -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>3.2.0</version> <!-- Adjust version as needed -->
+            <configuration>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>log4j2.xml</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
