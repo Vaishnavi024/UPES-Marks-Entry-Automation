@@ -219,7 +219,7 @@ public class facultyMarksEntry extends JFrame {
         // Add SAP ID field
         gbc.gridx = 0;
         gbc.gridy = 0;
-        inputPanel.add(new JLabel("SAP ID:"), gbc);
+        inputPanel.add(new JLabel(" Last 5 digits of SAP ID:"), gbc);
     
         gbc.gridx = 1;
         JTextField sapIdField = new JTextField(10);
